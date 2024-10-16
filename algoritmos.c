@@ -20,17 +20,17 @@ void ordenacao_insercao(int arr[], int n, long long int *trocas, long long int *
         int chave = arr[i];
         int j = i - 1;
 
-        // Move elementos que são maiores que 'chave' uma posição à frente
         while (j >= 0 && arr[j] > chave) {
             (*comparacoes)++;
-            arr[j + 1] = arr[j];
+            arr[j + 1] = arr[j];  // Apenas deslocamento
             j--;
-            (*trocas)++;
         }
-        (*comparacoes)++;
-        arr[j + 1] = chave;
+        (*comparacoes)++;  // Para a comparação que falhou no while
+        arr[j + 1] = chave;  // Coloca a chave na posição correta
+        (*trocas)++;  // Conta como uma troca aqui
     }
 }
+
 
 /*-------------------- SELECTION SORT -------------------- */
 
@@ -39,15 +39,20 @@ void ordenacao_insercao(int arr[], int n, long long int *trocas, long long int *
 void ordenacao_selecao(int arr[], int n, long long int *trocas, long long int *comparacoes) {
     for (int i = 0; i < n - 1; i++) {
         int indice_minimo = i;
+
         for (int j = i + 1; j < n; j++) {
             (*comparacoes)++;
             if (arr[j] < arr[indice_minimo]) {
                 indice_minimo = j;
             }
         }
-        trocar(&arr[indice_minimo], &arr[i], trocas);
+
+        if (indice_minimo != i) {
+            trocar(&arr[indice_minimo], &arr[i], trocas);  // Troca apenas se necessário
+        }
     }
 }
+
 
 
 /*-------------------- MERGE SORT -------------------- */
@@ -126,13 +131,14 @@ void heapify(int arr[], int n, int i, long long int *trocas, long long int *comp
     // Se o filho da esquerda for maior que a raiz
     if (esq < n && arr[esq] > arr[maior]) {
         maior = esq;
+        (*comparacoes)++;
     }
     // Se o filho da direita for maior que a raiz
     if (dir < n && arr[dir] > arr[maior]) {
         maior = dir;
+        (*comparacoes)++;
     }
 
-    (*comparacoes) += 2;
     // Se o maior não for a raiz, troca e continua heapify
     if (maior != i) {
         trocar(&arr[i], &arr[maior], trocas);
@@ -160,24 +166,24 @@ void ordenacao_heap(int arr[], int n, long long int *trocas, long long int *comp
 // Função que particiona o array com base em um pivô
 // Organiza os elementos menores que o pivô à esquerda e os maiores à direita
 int particionar(int arr[], int low, int high, long long int *trocas, long long int *comparacoes) {
-    int pivot = arr[high];  // Seleciona o pivô
-    int i = (low - 1);  // Índice do menor elemento
+    int pivot = arr[high];  // Seleciona o último elemento como pivô
+    int i = low - 1;        // Índice do menor elemento
 
-    // Percorre o array e organiza os elementos em relação ao pivô
     for (int j = low; j <= high - 1; j++) {
-        (*comparacoes)++;
-        if (arr[j] < pivot) {
+        if (++(*comparacoes) && arr[j] < pivot) {
             i++;
             trocar(&arr[i], &arr[j], trocas);
         }
     }
+
     trocar(&arr[i + 1], &arr[high], trocas);  // Coloca o pivô na posição correta
-    return (i + 1);
+    return (i + 1);  // Retorna o índice do pivô
 }
+
 
 // Função para selecionar o pivô aleatoriamente e chamar a função de partição
 int particionar_com_pivo_aleatorio(int arr[], int low, int high, long long int *trocas, long long int *comparacoes) {
-    int random_pivot = low + rand() % (high - low);  // Seleciona o pivô aleatoriamente
+    int random_pivot = low + rand() % (high - low + 1);  // Seleciona o pivô aleatoriamente
     trocar(&arr[random_pivot], &arr[high], trocas);  // Coloca o pivô no final
     return particionar(arr, low, high, trocas, comparacoes);  // Chama a função de partição
 }
@@ -185,9 +191,17 @@ int particionar_com_pivo_aleatorio(int arr[], int low, int high, long long int *
 // Função de Quick Sort com pivô aleatório
 // Chama recursivamente a função de partição e ordena os subarrays
 void ordenacao_quick_aleatorio(int arr[], int low, int high, long long int *trocas, long long int *comparacoes) {
-    if (low < high) {
+    while (low < high) {
         int pi = particionar_com_pivo_aleatorio(arr, low, high, trocas, comparacoes);
-        ordenacao_quick_aleatorio(arr, low, pi - 1, trocas, comparacoes);  // Ordena o subarray esquerdo
-        ordenacao_quick_aleatorio(arr, pi + 1, high, trocas, comparacoes);  // Ordena o subarray direito
+
+        // Ordena o menor subarray primeiro para otimizar a recursão
+        if (pi - low < high - pi) {
+            ordenacao_quick_aleatorio(arr, low, pi - 1, trocas, comparacoes);
+            low = pi + 1;  // Continua com o subarray maior
+        } else {
+            ordenacao_quick_aleatorio(arr, pi + 1, high, trocas, comparacoes);
+            high = pi - 1;  // Continua com o subarray menor
+        }
     }
 }
+
